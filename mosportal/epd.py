@@ -40,10 +40,10 @@ def get_epd(**kwargs):
         return
 
 
-def __get_epd_impl(session, month=None, year=None, **kwargs):
+def __get_epd_impl(session, **kwargs):
     try:
-        month = month if month and len(month) else datetime.now().month
-        year = year if year and len(year) else datetime.now().year
+        month = kwargs.get('month', datetime.now().month)
+        year = kwargs.get('year', datetime.now().year)
 
         response = session.get('https://www.mos.ru/pgu/ru/application/guis/-47/#step_2')
         tree = html.fromstring(response.text)
