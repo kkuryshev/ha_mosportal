@@ -1,0 +1,20 @@
+publish_water_usage:
+  description: передача показаний воды в моспортал
+
+get_epd:
+  description: получение ЕПД с моспортала и отправка его в канал mqtt
+  fields:
+    month:
+      # Description of the field
+      description: Опционально, месяц, за который надо получить ЕПД
+      # Example value that can be passed for this field
+      example: '12'
+    year:
+      description: год
+      example: '2019'
+    user_id:
+      description: id пользователя телеграм
+      example: '2012312679'
+    message_id:
+      description: id сообщения телеграм
+      example: '212312019'

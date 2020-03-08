@@ -1,0 +1,8 @@
+{
+  "domain": "mosportal",
+  "name": "mosportal HA integration",
+  "documentation": "https://github.com/kkuryshev/ha_mosportal.git",
+  "dependencies": ["mqtt"],
+  "codeowners": ["@kkuryshev"],
+  "requirements": ["requests","lxml"]
+}
