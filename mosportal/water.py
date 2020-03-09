@@ -27,11 +27,11 @@ class Water:
                 logger.warning('счетчик <%s> отсутствует в настройках hass' % item.meter_id)
                 continue
             meter = meter_list_to_update[item.meter_id]
-            item.cur_val = round(float(meter['val']),2)
+            item.cur_val = round(float(meter['val']), 2)
             item.friendly_name = meter['friendly_name']
             if item.upload_value():
                 result.append('Счетчик <%s (%s)> потрачено %s м3'
-                              % (item.friendly_name,item.meter_id,
+                              % (item.friendly_name, item.meter_id,
                                  round(float(item.cur_val) - float(item.value), 2)))
 
         return result
@@ -71,25 +71,29 @@ class Meter:
         self.meter_id = kwargs['meter_id']
         self.water = kwargs['water']
         self.value = kwargs['value']
-        self.friendly_name = kwargs.get('friendly_name',None)
-        self.cur_val = kwargs.get('cur_val',None)
+        self.update_date = kwargs['update_date']
+        self.friendly_name = kwargs.get('friendly_name', None)
+        self.cur_val = kwargs.get('cur_val', None)
         self.period = datetime.now().strftime('%Y-%m-%d')
 
     @classmethod
     def parse(cls, rj, water):
+        value, update_date = cls.__get_current_val(rj['indications'])
         return cls(
             counterId=rj['counterId'],
             meter_id=rj['num'][1:],
-            value=cls.__get_current_val(rj['indications']),
+            value=value,
+            update_date=update_date,
             water=water
         )
 
     @staticmethod
     def __get_current_val(indicator):
         if type(indicator) is list:
-            return max([float(row['indication']) for row in indicator])
+            obj = max(indicator, key=lambda x: float(x['indication']))
+            return float(obj['indication']),datetime.strptime(obj['period'][:-6], '%Y-%m-%d')
         else:
-            return float(indicator['indication'])
+            return float(indicator['indication']), datetime.strptime(indicator['period'][:-6], '%Y-%m-%d')
 
     @property
     def session(self):
@@ -121,8 +125,8 @@ class Meter:
             raise Error('ошибка вызова обновления %s' % e)
 
         if response.status_code == 200 and 'code' in rj and rj['code'] == 0:
-            logger.info('запрос успешно выполнен %s set value: %s' % (self.meter_id, self.cur_val))
+            logger.debug('запрос успешно выполнен %s set value: %s' % (self.meter_id, self.cur_val))
             return True
         else:
-            logger.error('Счетчик <%s (%s)>: %s' % (self.friendly_name,self.meter_id, rj.get('error', rj)))
+            logger.error('Счетчик <%s (%s)>: %s' % (self.friendly_name, self.meter_id, rj.get('error', rj)))
             return False
