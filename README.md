@@ -8,23 +8,24 @@
 2. Создать при необходимости папку "custom_components" и в нее скопировать папку "mosportal" и ее содержимое.
 3. Добавить следующие настройки в основной файл конфигурации HAS "configuration.yaml". 
 
-        mosportal:
-          epd:
-            topic_out: 'bot/infohub/in/home/info'
-          meters:
-            - name: input_number.big_restroom_water_cold_control_val
-              meter_id: !secret meter_1
-            - name: input_number.big_restroom_water_hot_control_val
-              meter_id: !secret meter_2
-            - name: input_number.small_restroom_water_cold_control_val
-              meter_id: !secret meter_3
-            - name: input_number.small_restroom_water_hot_control_val
-              meter_id: !secret meter_4
-          flat: !secret mosportal_flat
-          paycode: !secret mosportal_paycode
-          login: !secret mosportal_login
-          password: !secret mosportal_passwd
-          water_topic_out: 'bot/infohub/in/water/info'
+          mosportal:
+            flat: !secret mosportal_flat
+            paycode: !secret mosportal_paycode
+            login: !secret mosportal_login
+            password: !secret mosportal_passwd
+            epd:
+              topic_out: 'bot/infohub/in/home/info'
+            water:
+              topic_out: 'bot/infohub/in/water/info'
+              meters:
+                - name: input_number.big_restroom_water_cold_control_val
+                  meter_id: !secret meter_1
+                - name: input_number.big_restroom_water_hot_control_val
+                  meter_id: !secret meter_2
+                - name: input_number.small_restroom_water_cold_control_val
+                  meter_id: !secret meter_3
+                - name: input_number.small_restroom_water_hot_control_val
+                  meter_id: !secret meter_4
 
 4. Можно так же настроить задачу для автоматической отправки:
 
