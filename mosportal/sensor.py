@@ -1,6 +1,7 @@
 """Platform for sensor integration."""
 from homeassistant.helpers.entity import Entity
 import voluptuous as vol
+from datetime import datetime
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_NAME
 # from .water import Meter
@@ -55,7 +56,11 @@ class WaterSensor(Entity):
             attributes = {
                 'update_date': self._state.update_date,
                 'counterId': self._state.counterId,
-                'meter_id': self._state.meter_id
+                'meter_id': self._state.meter_id,
+                'checkup': self._state.checkup,
+                'consumption': self._state.consumption,
+                'refresh_date': datetime.now(),
+                'history_list': self._state.history_list
             }
             return attributes
 

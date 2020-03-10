@@ -71,29 +71,43 @@ class Meter:
         self.meter_id = kwargs['meter_id']
         self.water = kwargs['water']
         self.value = kwargs['value']
+        self.checkup = kwargs.get('checkup',None)
         self.update_date = kwargs['update_date']
         self.friendly_name = kwargs.get('friendly_name', None)
         self.cur_val = kwargs.get('cur_val', None)
         self.period = datetime.now().strftime('%Y-%m-%d')
+        self.consumption = kwargs.get('consumption',None)
+        self.history_list = kwargs.get('history_list',[])
 
     @classmethod
     def parse(cls, rj, water):
-        value, update_date = cls.__get_current_val(rj['indications'])
+        value, update_date,consumption,history_list = cls.__get_current_val(rj['indications'])
         return cls(
             counterId=rj['counterId'],
             meter_id=rj['num'][1:],
             value=value,
             update_date=update_date,
+            checkup=datetime.strptime(rj['checkup'][:-6], '%Y-%m-%d'),
+            consumption=consumption,
+            history_list=history_list,
             water=water
         )
 
     @staticmethod
     def __get_current_val(indicator):
+        value_list = []
         if type(indicator) is list:
-            obj = max(indicator, key=lambda x: float(x['indication']))
-            return float(obj['indication']),datetime.strptime(obj['period'][:-6], '%Y-%m-%d')
+            value_list = indicator
         else:
-            return float(indicator['indication']), datetime.strptime(indicator['period'][:-6], '%Y-%m-%d')
+            value_list.append(indicator)
+
+        consumption = None
+        if len(value_list) > 1:
+            value_list.sort(key=lambda x: float(x['indication']),reverse = True)
+            consumption = round(float(value_list[0]['indication']) - float(value_list[1]['indication']),2)
+
+        obj = value_list[0]
+        return float(obj['indication']),datetime.strptime(obj['period'][:-6], '%Y-%m-%d'),consumption,value_list
 
     @property
     def session(self):
