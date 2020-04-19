@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from lxml import html
 import time
 from .error import Error
@@ -9,7 +10,8 @@ import base64
 logger = logging.getLogger(__name__)
 
 
-def get_epd(topic_out,**kwargs):
+@asyncio.coroutine
+async def get_epd(topic_out,**kwargs):
     try:
         logger.debug('input params: %s' % kwargs)
         broker = kwargs['broker']
@@ -21,7 +23,7 @@ def get_epd(topic_out,**kwargs):
 
     result = dict(user_id=user_id, message_id=message_id)
     try:
-        result = __get_epd_impl(session=auth.session, **kwargs)
+        result = await __get_epd_impl(session=await auth.get_session(), **kwargs)
         logger.debug('получили ответ %s...' % str(result)[:30])
     except BaseException as e:
         result.update({'message': str(e)})
@@ -38,39 +40,44 @@ def get_epd(topic_out,**kwargs):
         return
 
 
-def __get_epd_impl(session, **kwargs):
+@asyncio.coroutine
+async def __get_epd_impl(session, **kwargs):
     try:
         month = kwargs.get('month', datetime.now().month)
         year = kwargs.get('year', datetime.now().year)
 
-        response = session.get('https://www.mos.ru/pgu/ru/application/guis/-47/#step_2')
-        tree = html.fromstring(response.text)
+        response = await session.get('https://www.mos.ru/pgu/ru/application/guis/-47/#step_2')
+        tree = html.fromstring(await response.text())
         form_hash = tree.find('.//input[@name="uniqueFormHash"]').attrib['value']
 
-        time.sleep(5)
-        response = session.post(url='https://www.mos.ru/pgu/ru/application/guis/-47/',
-                                data={
-                                    'action': 'send',
-                                    'field[new_epd_month][month]': month,
-                                    'field[new_epd_month][year]': year,
-                                    'field[new_epd_type]': '1',
-                                    'field[new_flat]': kwargs['flat'],
-                                    'field[new_payer_code]': kwargs['paycode'],
-                                    'form_id': '-47',
-                                    'org_id': 'guis',
-                                    'send_from_step': '1',
-                                    'step': '1',
-                                    'uniqueFormHash': form_hash
-                                })
-        app_id = response.json()['app_id']
-        time.sleep(5)
-        response = session.post(url='https://www.mos.ru/pgu/ru/application/guis/-47/',
-                                data={
-                                    'ajaxAction': 'give_data',
-                                    'ajaxModule': 'GuisEPD',
-                                    'app_id': app_id
-                                })
-        data_json = response.json()
+        # await asyncio.sleep(2)
+        response = await session.post(
+                        url='https://www.mos.ru/pgu/ru/application/guis/-47/',
+                        data={
+                            'action': 'send',
+                            'field[new_epd_month][month]': month,
+                            'field[new_epd_month][year]': year,
+                            'field[new_epd_type]': '1',
+                            'field[new_flat]': kwargs['flat'],
+                            'field[new_payer_code]': kwargs['paycode'],
+                            'form_id': '-47',
+                            'org_id': 'guis',
+                            'send_from_step': '1',
+                            'step': '1',
+                            'uniqueFormHash': form_hash
+                        })
+        body = await response.text()
+        app_id = json.loads(body)['app_id']
+        await asyncio.sleep(4)
+        response = await session.post(
+                        url='https://www.mos.ru/pgu/ru/application/guis/-47/',
+                        data={
+                            'ajaxAction': 'give_data',
+                            'ajaxModule': 'GuisEPD',
+                            'app_id': app_id
+                        })
+        data_json = await response.text()
+        data_json = json.loads(data_json)
         data = data_json.get('data', None)
         if not data:
             return {'message': 'данные от мос. портала не получены'}
@@ -88,11 +95,11 @@ def __get_epd_impl(session, **kwargs):
         pdf_guid = data_json['data']['files']['file_info']['file_url']
 
         logger.debug('запрашиваем файл ЕПД')
-        r = session.get(f'https://report.mos.ru/epd/epd.pdf?file_guid={pdf_guid}', stream=True)
-
+        r = await session.get(f'https://report.mos.ru/epd/epd.pdf?file_guid={pdf_guid}')
+        content = base64.b64encode(await r.content.read()).decode()
         return {
             'message': '%s.%s необходимо оплатить %s' % (month, year, need_to_pay),
-            'content': (base64.b64encode(r.content)).decode(),
+            'content': content,
             'filename': 'EPD_%04d_%02d.pdf' % (year, month),
             'result': {'code': '0'}
         }

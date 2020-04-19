@@ -12,15 +12,23 @@ logger = logging.getLogger(__name__)
 DOMAIN = "mosportal"
 
 
+# TODO добавить описание схемы
+
+
 @asyncio.coroutine
 def async_setup(hass, config):
     broker = hass.components.mqtt
     hass.components.epd = False
 
-    hass.data[DOMAIN] = {'water': Water(**config[DOMAIN], session=Session(**config[DOMAIN]))}
+    session = Session(**config[DOMAIN])
+
+    hass.data[DOMAIN] = {
+        'water': Water(hass=hass,session=session, **config[DOMAIN]),
+        'auth': session
+    }
 
     @callback
-    def epd_wrap(call):
+    def async_trigger_get_epd_service(call):
         topic_out = config[DOMAIN]['epd'].get('topic_out', None)
         if not topic_out:
             logger.error('Для получения ЕПД нужно указать канал mqtt для сохранения результата')
@@ -30,11 +38,12 @@ def async_setup(hass, config):
             return
         try:
             hass.components.epd = True
-
-            get_epd(topic_out, broker=broker,
-                    auth=Session(**config[DOMAIN]),
-                    **call.data, **config[DOMAIN]
-                    )
+            hass.loop.create_task(
+                get_epd(topic_out, broker=broker,
+                        auth=hass.data[DOMAIN]['auth'],
+                        **call.data, **config[DOMAIN]
+                        )
+            )
         except Error as e:
             logger.error('ошибка получения epd: %s' % e)
         except BaseException:
@@ -49,8 +58,8 @@ def async_setup(hass, config):
         :param call:
         :return:
         """
-        try:
-            res = hass.data[DOMAIN]['water'].update(
+        hass.loop.create_task(
+            hass.data[DOMAIN]['water'].update(
                 {
                     str(item['meter_id']):
                         {
@@ -60,15 +69,9 @@ def async_setup(hass, config):
                     for item in config[DOMAIN]['water']['meters']
                 }
             )
-            topic_out = config[DOMAIN]['water'].get('topic_out', None)
-            if res and topic_out:
-                broker.publish(topic_out, 'Показания успешно переданы в моспортал!\n    %s' % ';\n   '.join(res))
-        except Error as e:
-            logger.error('ошибка передачи данных в моспортал: %s' % e)
-        except BaseException:
-            logger.exception('ошибка передачи данных в моспортал')
+        )
 
-    hass.services.async_register(DOMAIN, 'get_epd', epd_wrap)
+    hass.services.async_register(DOMAIN, 'get_epd', async_trigger_get_epd_service)
     hass.services.async_register(DOMAIN, 'publish_water_usage', publish_water_usage)
 
     return True
