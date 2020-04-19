@@ -16,7 +16,6 @@
             epd:
               topic_out: 'bot/infohub/in/home/info'
             water:
-              topic_out: 'bot/infohub/in/water/info'
               meters:
                 - name: input_number.big_restroom_water_cold_control_val
                   meter_id: !secret meter_1
@@ -41,6 +40,34 @@
 
 4. Перезапустить Homeassistant
 5. Вызвать сервис "mosportal.publish_water_usage". При этом нужно учитывать, что показания можно передавать в определенные дни (с 16 по 25 число месяца вроде).
+6. При передаче показаний генерируются следующие события  (event):
+  6.1. Для каждого счетчика, если передача была успешно генерируется событие (event) с типом upload_water_success. Содержит событие json: {friendly_name:str,meter_id:str,usage:str}
+  6.2. Для кадлого счетчкиа, если передача была успешно генерируется событие (event) с типом upload_water_fail. Содержит событие json: {friendly_name:str,meter_id:str,error:str}
+  6.3. Один раз после обновления генерируюется событие upload_water_finish. Тело пустое. 
+
+События можно использовать для любой последующей обработки, например выводить в качестве информации на экран, или обновлять статусы сенсоров портала
+            - alias: 'mosportal_upload_water_usage_fail'
+              trigger:
+                - platform: event
+                  event_type: upload_water_fail
+              action:
+                - service: inform.send
+                  data_template:
+                    message: >
+                      Ошибка передачи показаний для счетчика <{{ trigger.event.data['friendly_name'] }}>
+                      : {{ trigger.event.data['error'] }}
+                    topic: 'HASS'
+                    level: 'ERROR'
+            
+            - alias: 'mosportal_upload_water_usage_finish'
+              trigger:
+                - platform: event
+                  event_type: upload_water_finish
+              action:
+                - service: homeassistant.update_entity
+                  entity_id: sensor.mosportal_restroom_big_cold_water
+
+
 
 Сенсоры:
 ![map|258x99](img/sensor.png)
