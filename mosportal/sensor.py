@@ -64,7 +64,7 @@ class WaterSensor(Entity):
     @property
     def unique_id(self) -> str:
         """Return a unique identifier for this entity."""
-        return f"{self.name}"
+        return f"{DOMAIN}_{self.name}"
 
     @property
     def device_state_attributes(self):
