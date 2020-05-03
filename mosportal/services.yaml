@@ -1,5 +1,13 @@
 publish_water_usage:
   description: передача показаний воды в моспортал
+  fields:
+    meter_list_to_update:
+      description: Опционально, месяц, за который надо получить ЕПД
+      example:
+        - meter_id: 'id счетчика'
+          value: 123.7
+          friendly_name: 'наименование счетчика (для отображения в event)'
+
 
 get_epd:
   description: получение ЕПД с моспортала и отправка его в канал mqtt
@@ -12,9 +20,6 @@ get_epd:
     year:
       description: год
       example: '2019'
-    user_id:
-      description: id пользователя телеграм
-      example: '2012312679'
-    message_id:
-      description: id сообщения телеграм
-      example: '212312019'
+    data:
+      description: любые данные в формате json
+      example: "{'user_id':'123','message_id':'132'}"

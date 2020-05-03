@@ -1,14 +1,11 @@
 """Platform for sensor integration."""
-import logging
-from datetime import datetime
 from homeassistant.helpers.entity import Entity
-
+from .const import DOMAIN
+import logging
+from homeassistant.const import CONF_NAME
+from datetime import datetime
 
 _LOGGER = logging.getLogger(__name__)
-
-DOMAIN = 'mosportal'
-DEFAULT_NAME = 'Счетчик воды  (Моспортал)'
-CONF_METER_ID = 'meter_id'
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -23,26 +20,30 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     entities = []
     for meter in meter_list:
-        sensor = WaterSensor(
+        sensor = MosenergoSensor(
             client,
-            meter.meter_id,
-            meter.name
+            meter.nn_ls,
+            meter.nn_ls
         )
         entities.append(sensor)
     _LOGGER.debug(f'Счетчики моспортала добавлены {entities}')
 
-    async_add_entities(entities,update_before_add=True)
+    async_add_entities(entities, update_before_add=True)
 
 
-class WaterSensor(Entity):
+class MosenergoSensor(Entity):
     """Representation of a Sensor."""
 
     def __init__(self, client, meter_id, name):
         """Initialize the sensor."""
-        self._state = None
         self.client = client
-        self.meter_id = meter_id
+        self._device_class = 'power'
+        self._unit = 'kw'
+        self._icon = 'mdi:speedometer'
+        self._available = True
         self._name = name
+        self._state = None
+        self.meter_id = meter_id
         self.update_time = None
 
     @property
@@ -54,12 +55,12 @@ class WaterSensor(Entity):
     def state(self):
         """Return the state of the sensor."""
         if self._state:
-            return self._state.value
+            return self._state.last_measure.nm_status
 
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return 'м³'
+        return 'кв'
 
     @property
     def unique_id(self) -> str:
@@ -69,12 +70,27 @@ class WaterSensor(Entity):
     @property
     def device_state_attributes(self):
         if self._state:
+            measure = self._state.last_measure
             attributes = {
-                'counterId': self._state.counterId,
-                'meter_id': self._state.meter_id,
-                'checkup': self._state.checkup,
-                'consumption': self._state.consumption,
-                'history_list': self._state.history_list,
+                'nn_ls' : self._state.nn_ls,
+                'nm_provider':self._state.nm_provider,
+                'nm_ls_group_full' : self._state.nm_ls_group_full,
+                'dt_pay': measure.dt_pay,
+                'nm_status': measure.nm_status,
+                'sm_pay': measure.sm_pay,
+                'dt_meter_installation': measure.dt_meter_installation,
+                'dt_indication': measure.dt_indication,
+                'nm_description_take': measure.nm_description_take,
+                'nm_take': measure.nm_take,
+                'nm_t1': measure.nm_t1,
+                'nm_t2': measure.nm_t2,
+                'nm_t3': measure.nm_t3,
+                'pr_zone_t1': measure.pr_zone_t1,
+                'pr_zone_t2': measure.pr_zone_t2,
+                'pr_zone_t3': measure.pr_zone_t3,
+                'vl_t1': measure.vl_t1,
+                'vl_t2': measure.vl_t2,
+                'vl_t3': measure.vl_t3,
                 'refresh_date': self.update_time,
             }
             return attributes
@@ -97,7 +113,7 @@ class WaterSensor(Entity):
                 return
 
             for item in meter_list.values():
-                if item.meter_id == self.meter_id:
+                if item.nn_ls == self.meter_id:
                     return item, datetime.now()
         except BaseException:
             _LOGGER.exception('ошибка получения состояния счетчиков с портала')

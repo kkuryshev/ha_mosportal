@@ -1,0 +1,15 @@
+publish_electricity_usage:
+  description: передача показаний электричества в мосэнергосбыт
+  fields:
+    paycode:
+      description: Номер лицевого счета
+      example: '123-123-23'
+    volume_day:
+      description: Дневные показания
+      example: 123
+    volume_night:
+      description: Ночные показания
+      example: 123
+    volume_middle:
+      description: Промежутночные (вечерние) показания
+      example: 123

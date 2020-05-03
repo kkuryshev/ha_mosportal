@@ -1,5 +1,7 @@
-# ha_mosportal
-Компонент для работы с сервисами моспортала (https://www.mos.ru):
+# home_assistant компоненты для работы с порталом Москвы и Мосэнергосбыт
+
+## Портал Москвы (https://www.mos.ru)
+Компонент для работы с сервисами моспортала:
 1. получение pdf файла ЕПД
 2. передача данных расхода воды. Есть поддержка нескольких счетчиков воды
 
@@ -13,75 +15,95 @@
             paycode: !secret mosportal_paycode
             login: !secret mosportal_login
             password: !secret mosportal_passwd
-            epd:
-              topic_out: 'bot/infohub/in/home/info'
-            water:
-              meters:
-                - name: input_number.big_restroom_water_cold_control_val
-                  meter_id: !secret meter_1
-                - name: input_number.big_restroom_water_hot_control_val
-                  meter_id: !secret meter_2
-                - name: input_number.small_restroom_water_cold_control_val
-                  meter_id: !secret meter_3
-                - name: input_number.small_restroom_water_hot_control_val
-                  meter_id: !secret meter_4
 
-4. Можно так же настроить задачу для автоматической отправки:
+4. Компонент автоматически добавит сенсоры (по одному на каждый счетчик, зарегистрированный в ЛК на портале Москвы). 
+   * По умолчанию название счетчика берется из его номера. При желании, название сенсора можно переименовать в Home_assistant (HASS)
+   * Счетчики можно так же отключить (в настройках HASS). 
+   * Автоматическое получения данных с портала для счетчиков отключено. Обновить состояние можно вручную, вызвав для этого стандартный сервис HAS homeassistant.update_entity и указав в входных данных entity_id = названию сенсора. 
+  ![map|258x99](img/sensor.png)
 
-        - alias: Send meters value to mosportal
-            trigger:
-                - platform: time
-                  at: '12:00:00'
-            condition:
-                - condition: template
-                  value_template: "{{ now().day == 20 }}"
-            action:
-                - service: mosportal.publish_water_usage  #сервис, который публикует компонент 
+5. Для передачи показаний нужно воспользоваться сервисом **mosportal.publish_water_usage**. 
+    * На вход передается массив из показаний (если счетчиков несколько) согласно примеру ниже:
+   
+          - service: mosportal.publish_water_usage
+            data_template:
+              meter_list_to_update:
+                - meter_id: # (номер счетчика, можно использовать !secret meter_1_paycode)
+                  value: # (текущие показания счетчика, например {{states('input_number.meter_1')}})
+                  friendly_name: # (наименование счетчика для последующего отображения в event, например 'Счетчик холодной воды')                    
+                  ...
+                - meter_id:
+                  value:
+                  friendly_name: 
 
-5. Перезапустить Homeassistant
-6. Вызвать сервис "mosportal.publish_water_usage". При этом нужно учитывать, что показания можно передавать в определенные дни (с 16 по 25 число месяца вроде).
-7. При передаче показаний генерируются следующие события  (event):
-    7.1. Для каждого счетчика, если передача была успешно генерируется событие (event) с типом upload_water_success. Содержит событие json: {friendly_name:str,meter_id:str,usage:str}
-    7.2. Для кадлого счетчкиа, если передача была успешно генерируется событие (event) с типом upload_water_fail. Содержит событие json: {friendly_name:str,meter_id:str,error:str}
-    7.3. Один раз после обновления генерируюется событие upload_water_finish. Тело пустое. 
-
-8. События можно использовать для любой последующей обработки, например выводить в качестве информации на экран, или обновлять статусы сенсоров портала
-
-            - alias: 'mosportal_upload_water_usage_fail'
+    * Можно так же настроить задачу для автоматической отправки:
+  
+          - alias: Send meters value to mosportal
               trigger:
-                - platform: event
-                  event_type: upload_water_fail
+                  - platform: time
+                    at: '12:00:00'
+              condition:
+                  - condition: template
+                    value_template: "{{ now().day == 20 }}"
               action:
-                - service: inform.send
-                  data_template:
-                    message: >
-                      Ошибка передачи показаний для счетчика <{{ trigger.event.data['friendly_name'] }}>
-                      : {{ trigger.event.data['error'] }}
-                    topic: 'HASS'
-                    level: 'ERROR'
-            
+                  - service: mosportal.publish_water_usage  #сервис, который публикует компонент 
+
+    * При передаче показаний генерируются следующие события  (event):
+      * Для каждого счетчика, если передача была успешно генерируется событие (event) с типом **upload_water_success**. Содержит событие json: {friendly_name:str,meter_id:str,usage:str}
+      * Для кадлого счетчкиа, если передача была не успешна генерируется событие (event) с типом **upload_water_fail**. Содержит событие json: {friendly_name:str,meter_id:str,error:str}
+      * Один раз после обновления вне зависимости от успешности передачи генерируюется событие **upload_water_finish**. Тело пустое. На него можно, например, повесить обновление данных с портала:
+
             - alias: 'mosportal_upload_water_usage_finish'
               trigger:
                 - platform: event
                   event_type: upload_water_finish
               action:
                 - service: homeassistant.update_entity
-                  entity_id: sensor.mosportal_restroom_big_cold_water
+                  entity_id: sensor.meter_1
+                - service: homeassistant.update_entity
+                  entity_id: sensor.meter_2
 
+                  
 
+    * События можно использовать для любой последующей обработки, например выводить в качестве информации на экран, или обновлять статусы сенсоров портала
 
-Сенсоры:
-![map|258x99](img/sensor.png)
-Компонент поддерживает добавление сенсора для получения данных о переданных ранее показаниях воды. Для использования сенсоров нужно добавить следующую конфигурацию:
+            - alias: 'mosportal_upload_water_usage_fail'
+              trigger:
+                - platform: event
+                  event_type: upload_water_fail
+              action:
+                - service: mqtt.publish
+                  data_template:
+                    payload: >
+                      Ошибка передачи показаний для счетчика <{{ trigger.event.data['friendly_name'] }}>
+                      : {{ trigger.event.data['error'] }}
+                    topic: 'HASS'
+6. Для получения ЕПД нужно вызвать сервис **mosportal.get_epd**
+   * На вход могут быть переданы необязательные параметры:
+     * year - год получения ЕПД
+     * month - месяц получения EПД
+     * data - строка с сериализованным json для проксирования данных. Вся эта информация окажется в event **get_epd_success**, который будет сгенерирован при выполнении сервиса
+     * В случае, если сервис отработал успешно, будет сгенерировано событие **get_epd_success**, которое будет содержать json следующего формата: {msg: строка, content: base64 с pdf епд, filename: название файла, ... а так же все атрибуты, которые были переданы в входном парамертре data}
+     * В случае, если сервис отработал с ошибой, будет сгенерировано событие **get_epd_error**, которое будет содержать json следующего формата: {msg:строка с ошибкой}
 
-        - platform: mosportal
-          name: <Название счетчика>
-          meter_id: <Код счетчика>
-          
-На каждый счетчик нужно добавить свой сенсор.
-Так как информация на портале меняется только при ее обновлении с стороны клиента, предлагаю обновлять данные состояние сенсора использую сервис: homeassistant.update_entity. Его можно встроить например в правило передачи показаний.
+7. Для более корректной работы, компонент сохраняет куки в корневой папке has/.storage/.mosportal_cookie
+   
 
+## Портал Мосэнергосбыт (https://www.mos.ru)
+Портал Москвы предоставляет возможность передачи данных электричества. Однако, было принято решение сделать отдельный компонент для работы с Мосэнергосбыт, ускорив его работу и сделав данные сенсора более полными.
 
+1. Клонировать репозиторий [https://github.com/kkuryshev/ha_mosportal.git](https://github.com/kkuryshev/ha_mosportal.git)
+2. Создать при необходимости папку "custom_components" и в нее скопировать папку "mosenergosbyt" и ее содержимое.
+3.  Добавить следующие настройки в основной файл конфигурации HAS "configuration.yaml". 
+
+        mosenergosbyt:
+          username: !secret mosenergosbyt_login
+          password: !secret mosenergosbyt_passwd
+4. Компонент автоматически добавит сенсоры (по одному на каждый счетчик, зарегистрированный в ЛК на портале Мосэнергосбыт). 
+   * По умолчанию название счетчика берется из его номера. При желании, название сенсора можно переименовать в Home_assistant (HASS)
+   * Счетчики можно так же отключить (в настройках HASS). 
+   * Автоматическое получения данных с портала для счетчиков отключено. Обновить состояние можно вручную, вызвав для этого стандартный сервис HAS homeassistant.update_entity и указав в входных данных entity_id = названию сенсора. 
+  
 **Пример полной автоматизации от получения данных от счетчика до передачи показаний на портал Москвы**
 1. К герконам водяных счетчиков подключены микроконтроллеры, которые регистрируют импульсы (по два на каждые 10 литров воды - один логическая 1 и один логический 0). 
 2. На каждый импульс генерируется сообщение, которое отправляется в mqtt топик, который слушает HomeAssistant (HA)
