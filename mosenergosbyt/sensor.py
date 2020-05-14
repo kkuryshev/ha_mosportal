@@ -65,16 +65,16 @@ class MosenergoSensor(Entity):
     @property
     def unique_id(self) -> str:
         """Return a unique identifier for this entity."""
-        return f"{DOMAIN}_{self.name}"
+        return f"mosenergosbyt_{self.name}"
 
     @property
     def device_state_attributes(self):
         if self._state:
             measure = self._state.last_measure
             attributes = {
-                'nn_ls' : self._state.nn_ls,
-                'nm_provider':self._state.nm_provider,
-                'nm_ls_group_full' : self._state.nm_ls_group_full,
+                'nn_ls': self._state.nn_ls,
+                'nm_provider': self._state.nm_provider,
+                'nm_ls_group_full': self._state.nm_ls_group_full,
                 'dt_pay': measure.dt_pay,
                 'nm_status': measure.nm_status,
                 'sm_pay': measure.sm_pay,
@@ -92,6 +92,9 @@ class MosenergoSensor(Entity):
                 'vl_t2': measure.vl_t2,
                 'vl_t3': measure.vl_t3,
                 'refresh_date': self.update_time,
+                'nn_days': self._state.nn_days,
+                'vl_debt': self._state.vl_debt,
+                'vl_balance': self._state.vl_balance
             }
             return attributes
 

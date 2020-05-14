@@ -86,7 +86,7 @@ class PortalWrap:
 
     def get_meters_list(self):
         try:
-            self.account.get_info(with_measure=True)
+            self.account.get_info(with_measure=True, indications=True, balance=True)
             return self.account.meter_list
         except BaseException as e:
             _LOGGER.error(f'ошибка получения данных {e}')

@@ -157,8 +157,8 @@ class PortalWrap:
 
     def get_epd_service(self, *args):
         _LOGGER.debug(f'входные данные на получение ЕПД: {args}')
-        month = args[0]
-        year = args[1]
+        month = int(args[0])
+        year = int(args[1])
         data = json.loads(args[2])
         try:
             _LOGGER.debug('вызов сервиса получения epd')
