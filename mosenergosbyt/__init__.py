@@ -73,6 +73,7 @@ class PortalWrap:
     def upload_measure(self, *args):
         try:
             _LOGGER.debug(f'входные данные для передачи на портал: {args}')
+            self.account.get_info(with_measure=True)
             if not args[0] in self.account.meter_list:
                 _LOGGER.error(f'ЛК {args[0]} нет среди счетчиков клиента')
                 return
