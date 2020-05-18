@@ -4,5 +4,5 @@
   "documentation": "https://github.com/kkuryshev/ha_mosenergosbyt.git",
   "dependencies": [],
   "codeowners": ["@kkuryshev"],
-  "requirements": ["mosenergosbyt>=0.1.12"]
+  "requirements": ["mosenergosbyt>=0.1.13"]
 }
