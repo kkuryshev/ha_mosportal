@@ -4,5 +4,5 @@
   "documentation": "https://github.com/kkuryshev/ha_mosportal.git",
   "dependencies": ["mqtt"],
   "codeowners": ["@kkuryshev"],
-  "requirements": ["mosportal>=0.1.5"]
+  "requirements": ["mosportal>=0.1.6"]
 }

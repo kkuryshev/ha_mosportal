@@ -12,6 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 import base64
 from os.path import join, dirname, abspath
+import pkg_resources
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ CONFIG_SCHEMA = vol.Schema(
 
 
 async def async_setup(hass: HomeAssistant, base_config: dict):
+    _LOGGER.info(f'Используется версия модуля mosportal: {pkg_resources.get_distribution("mosportal").version}')
     config = base_config[DOMAIN]
     _LOGGER.debug("настройка компонента моспортал")
     client = PortalWrap(
@@ -38,7 +40,7 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
         Session(
             config[CONF_USERNAME],
             config[CONF_PASSWORD],
-            cookie_save_path=join(dirname(abspath(__file__)), '..', '..')
+            cookie_save_path=join(dirname(abspath(__file__)), '..', '..','.storage')
         ),
         config[CONF_FLAT],
         config[CONF_PAYCODE]
