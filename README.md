@@ -13,7 +13,7 @@
           mosportal:
             flat: !secret mosportal_flat
             paycode: !secret mosportal_paycode
-            login: !secret mosportal_login
+            username: !secret mosportal_login
             password: !secret mosportal_passwd
 
 4. Компонент автоматически добавит сенсоры (по одному на каждый счетчик, зарегистрированный в ЛК на портале Москвы). 

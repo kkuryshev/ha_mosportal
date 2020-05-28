@@ -95,7 +95,7 @@ class PortalWrap:
             _LOGGER.error(f'ошибка получения данных {e}')
 
     async def fetch_data(self):
-        async with async_timeout.timeout(10) as at:
+        async with async_timeout.timeout(20) as at:
             data = await self.hass.async_add_executor_job(
                 self.get_meters_list
             )

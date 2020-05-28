@@ -113,10 +113,9 @@ class PortalWrap:
             return result
         except BaseException as e:
             _LOGGER.error(f'данные не могут быть загружены {e}')
-            return None
 
     async def fetch_data(self):
-        async with async_timeout.timeout(10) as at:
+        async with async_timeout.timeout(20) as at:
             data = await self.hass.async_add_executor_job(
                 self.get_meters_list
             )
