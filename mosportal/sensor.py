@@ -17,7 +17,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     client = hass.data[DOMAIN]
 
-    meter_list = discovery_info.values()
+    meter_list = discovery_info.items()
     if not meter_list:
         return
 
@@ -25,8 +25,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     for meter in meter_list:
         sensor = WaterSensor(
             client,
-            meter.meter_id,
-            meter.name
+            meter[0],
+            meter[1]
         )
         entities.append(sensor)
     _LOGGER.debug(f'Счетчики моспортала добавлены {entities}')
@@ -89,8 +89,6 @@ class WaterSensor(Entity):
 
     async def async_fetch_state(self):
         try:
-            _LOGGER.debug('получение данных с портала по счетчикам')
-
             meter_list = await self.client.fetch_data()
 
             if not meter_list:

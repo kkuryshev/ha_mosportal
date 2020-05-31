@@ -14,7 +14,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     client = hass.data[DOMAIN]
 
-    meter_list = discovery_info.values()
+    meter_list = discovery_info.items()
     if not meter_list:
         return
 
@@ -22,11 +22,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     for meter in meter_list:
         sensor = MosenergoSensor(
             client,
-            meter.nn_ls,
-            meter.nn_ls
+            meter[0]
         )
         entities.append(sensor)
-    _LOGGER.debug(f'Счетчики моспортала добавлены {entities}')
+    _LOGGER.debug(f'Счетчики мосэнергосбыт добавлены {entities}')
 
     async_add_entities(entities, update_before_add=True)
 
@@ -34,14 +33,14 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class MosenergoSensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, client, meter_id, name):
+    def __init__(self, client, meter_id):
         """Initialize the sensor."""
         self.client = client
         self._device_class = 'power'
         self._unit = 'kw'
         self._icon = 'mdi:speedometer'
         self._available = True
-        self._name = name
+        self._name = meter_id
         self._state = None
         self.meter_id = meter_id
         self.update_time = None

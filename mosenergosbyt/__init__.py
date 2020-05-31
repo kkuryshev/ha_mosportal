@@ -10,6 +10,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
 import pkg_resources
+from datetime import datetime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
                 hass,
                 SENSOR_DOMAIN,
                 DOMAIN,
-                discovered=meter_list,
+                discovered={meter.nn_ls: meter.nn_ls for meter in meter_list.values()},
                 hass_config=config,
             )
         )
@@ -71,6 +72,7 @@ class PortalWrap:
     def __init__(self, **kwargs):
         self.hass = kwargs['hass']
         self.account = kwargs['account']
+        self.last_update = None
 
     def upload_measure(self, *args):
         try:
@@ -89,7 +91,13 @@ class PortalWrap:
 
     def get_meters_list(self):
         try:
+            #кеш на минуту, чтобы предотвратить лишние запросы на портал
+            if self.last_update and (datetime.now() - self.last_update).total_seconds() < 60:
+                return self.account.meter_list
+
             self.account.get_info(with_measure=True, indications=True, balance=True)
+            self.last_update = datetime.now()
+
             return self.account.meter_list
         except BaseException as e:
             _LOGGER.error(f'ошибка получения данных {e}')

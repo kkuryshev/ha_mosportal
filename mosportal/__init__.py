@@ -40,7 +40,7 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
         Session(
             config[CONF_USERNAME],
             config[CONF_PASSWORD],
-            cookie_save_path=join(dirname(abspath(__file__)), '..', '..','.storage')
+            cookie_save_path=join(dirname(abspath(__file__)), '..', '..', '.storage')
         ),
         config[CONF_FLAT],
         config[CONF_PAYCODE]
@@ -48,9 +48,8 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
 
     hass.data[DOMAIN] = client
 
-    meter_list = await hass.async_add_executor_job(
-        client.get_meters_list
-    )
+    meter_list = await client.fetch_data()
+
     if meter_list:
         _LOGGER.debug("счетчики получены")
         hass.async_create_task(
@@ -58,7 +57,7 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
                 hass,
                 SENSOR_DOMAIN,
                 DOMAIN,
-                discovered=meter_list,
+                discovered={meter.meter_id: meter.name for meter in meter_list.values()},
                 hass_config=config,
             )
         )
