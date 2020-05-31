@@ -1,8 +1,0 @@
-{
-  "domain": "mosenergosbyt",
-  "name": "mosenergosbyt HA integration",
-  "documentation": "https://github.com/kkuryshev/ha_mosenergosbyt.git",
-  "dependencies": [],
-  "codeowners": ["@kkuryshev"],
-  "requirements": ["mosenergosbyt>=0.1.14"]
-}
