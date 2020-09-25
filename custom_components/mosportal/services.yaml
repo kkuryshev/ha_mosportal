@@ -23,3 +23,6 @@ get_epd:
     data:
       description: любые данные в формате json
       example: "{'user_id':'123','message_id':'132'}"
+    payload:
+      description: payload для получения ЕПД (можно не указывать, если в ЛК есть только один ЕПД)
+      example: 1231231231

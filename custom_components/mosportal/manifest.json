@@ -2,7 +2,7 @@
   "domain": "mosportal",
   "name": "mosportal HA integration",
   "documentation": "https://github.com/kkuryshev/ha_mosportal.git",
-  "dependencies": ["mqtt"],
+  "dependencies": [],
   "codeowners": ["@kkuryshev"],
-  "requirements": ["mosportal>=0.1.7"]
+  "requirements": ["mosportal>=0.2.0"]
 }

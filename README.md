@@ -1,3 +1,5 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+
 # home_assistant компоненты для работы с порталом Москвы и Мосэнергосбыт (https://www.mos.ru)
 
 Компонент для работы с сервисами моспортала:
@@ -10,10 +12,13 @@
 3. Добавить следующие настройки в основной файл конфигурации HAS "configuration.yaml". 
 
           mosportal:
-            flat: !secret mosportal_flat
-            paycode: !secret mosportal_paycode
             username: !secret mosportal_login
             password: !secret mosportal_passwd
+            flats:
+              - flat: !secret mosportal_flat_1
+                paycode: !secret mosportal_paycode_1
+              - flat: !secret mosportal_flat_2
+                paycode: !secret mosportal_paycode_2
 
 4. Компонент автоматически добавит сенсоры (по одному на каждый счетчик, зарегистрированный в ЛК на портале Москвы). 
    * По умолчанию название счетчика берется из его номера. При желании, название сенсора можно переименовать в Home_assistant (HASS)
@@ -82,6 +87,9 @@
      * year - год получения ЕПД
      * month - месяц получения EПД
      * data - строка с сериализованным json для проксирования данных. Вся эта информация окажется в event **get_epd_success**, который будет сгенерирован при выполнении сервиса
+     * payload - код платежного документа для идентификации квартиры (если в настройках указана одна квартира, то можно не заполнять)
+  
+   В результате работы:
      * В случае, если сервис отработал успешно, будет сгенерировано событие **get_epd_success**, которое будет содержать json следующего формата: {msg: строка, content: base64 с pdf епд, filename: название файла, ... а так же все атрибуты, которые были переданы в входном парамертре data}
      * В случае, если сервис отработал с ошибой, будет сгенерировано событие **get_epd_error**, которое будет содержать json следующего формата: {msg:строка с ошибкой}
 
