@@ -48,8 +48,8 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
     client = PortalWrap(
         hass,
         Session(
-            config[CONF_USERNAME],
-            config[CONF_PASSWORD],
+            str(config[CONF_USERNAME]),
+            str(config[CONF_PASSWORD]),
             cookie_save_path=join(
                 dirname(abspath(__file__)), '..', '..', '.storage')
         ),
@@ -72,6 +72,8 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
                 hass_config=config,
             )
         )
+    else:
+       _LOGGER.warning("информация о счетчиках воды на портале Москвы не найдена") 
 
     async def trigger_get_epd_service(call):
         try:
@@ -143,6 +145,7 @@ class PortalWrap:
         try:
             _LOGGER.debug("получение списка счетчиков с портала")
             result = {item.meter_id: item for item in self.meters_list}
+            _LOGGER.debug(f"успешно получены следующие данные {result}")
             return result
         except BaseException as e:
             _LOGGER.error(f'данные не могут быть загружены {e}')
@@ -159,6 +162,9 @@ class PortalWrap:
     def publish_water_usage(self, meter_list_to_update):
         _LOGGER.debug(
             f'входные данные для передачи на портал: {meter_list_to_update}')
+
+        meter_list_to_update = {
+            str(key): item for key, item in meter_list_to_update.items()}
 
         for item in self.meters_list:
             msg = {'meter_id': item.meter_id}
