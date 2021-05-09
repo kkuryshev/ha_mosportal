@@ -219,10 +219,12 @@ class PortalWrap:
                 raise BaseException(
                     f'указанный payload ({payload}) отсутвует в списке епд')
 
-            _LOGGER.debug(f'вызов сервиса получения epd {epd}')
+            _LOGGER.debug(f'вызов сервиса получения epd {data}')
             rsp = epd.get(year=year, month=month)
-            data.update(
-                {
+
+            _LOGGER.debug(f'успешно получен: {rsp.amount}')
+            
+            resp = {
                     'year': year,
                     'month': month,
                     'amount': rsp.amount,
@@ -232,14 +234,27 @@ class PortalWrap:
                     'content': base64.b64encode(rsp.content).decode(),
                     'filename': f'EPD-{rsp.period}.pdf'
                 }
-            )
-            _LOGGER.debug('успешно получен')
+            resp.update(data)
+            # data.update(
+            #     {
+            #         'year': year,
+            #         'month': month,
+            #         'amount': rsp.amount,
+            #         'epd_type': rsp.epd_type[1],
+            #         'penalty': rsp.penalty,
+            #         'msg': '%04d_%02d. Статус оплаты: %s. Сумма %s' % (year, month, rsp.status[1], rsp.amount),
+            #         'content': base64.b64encode(rsp.content).decode(),
+            #         'filename': f'EPD-{rsp.period}.pdf'
+            #     }
+            # )
+            _LOGGER.debug(f'успешно получен: {rsp.amount}')
             self.hass.bus.fire(
                 'get_epd_success',
-                data
+                resp
             )
         except BaseException as e:
-            data.update({'msg': str(e)})
+            resp = {'msg': str(e)}
+            resp.update(data)
             if not isinstance(e, EpdNotExist):
                 _LOGGER.exception(
                     f'ошибка получения данных с портала {e}'
