@@ -116,11 +116,12 @@ async def async_setup(hass: HomeAssistant, base_config: dict):
 class PortalWrap:
     def __init__(self, hass: HomeAssistant, auth: Session, flat_list):
         self.hass = hass
+        self.session = auth
 
         self.epd_dict = {
             item[CONF_PAYCODE]:
                 Epd(
-                    session=auth,
+                    session=self.session,
                     flat=item[CONF_FLAT],
                     paycode=item[CONF_PAYCODE]
             ) for item in flat_list
@@ -128,7 +129,7 @@ class PortalWrap:
 
         self.water_list = [
             Water(
-                session=auth,
+                session=self.session,
                 flat=item[CONF_FLAT],
                 paycode=item[CONF_PAYCODE]
             ) for item in flat_list
@@ -145,6 +146,7 @@ class PortalWrap:
         try:
             _LOGGER.debug("получение списка счетчиков с портала")
             result = {item.meter_id: item for item in self.meters_list}
+            self.session.logout()
             _LOGGER.debug(f"успешно получены следующие данные {result}")
             return result
         except BaseException as e:
@@ -193,7 +195,7 @@ class PortalWrap:
                     'upload_water_fail',
                     msg
                 )
-
+        self.session.logout()
         self.hass.bus.fire(
             'upload_water_finish',
             {}
@@ -248,6 +250,7 @@ class PortalWrap:
             #     }
             # )
             _LOGGER.debug(f'успешно получен: {rsp.amount}')
+            self.session.logout()
             self.hass.bus.fire(
                 'get_epd_success',
                 resp
