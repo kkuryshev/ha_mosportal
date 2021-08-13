@@ -4,5 +4,6 @@
   "documentation": "https://github.com/kkuryshev/ha_mosportal.git",
   "dependencies": [],
   "codeowners": ["@kkuryshev"],
+  "version": "1.0",
   "requirements": ["mosportal>=0.2.9"]
 }
